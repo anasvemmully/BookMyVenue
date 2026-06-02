@@ -1,7 +1,7 @@
 import { Router } from "express";
 
-import bookingRoutes from "./bookingRoutes.js";
-import venueRoutes from "./venueRoutes.js";
+import bookingRoutes from "./booking.route.js";
+import venueRoutes from "./venue.route.js";
 
 const router = Router();
 
