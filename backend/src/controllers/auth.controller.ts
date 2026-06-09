@@ -1,12 +1,83 @@
-import * as authService from "../services/auth.service";
+import { prisma } from "../config/db";
+import { AppError } from "../utils/AppError";
+import { signAccessToken } from "../utils/jwt";
+import { comparePassword, hashPassword } from "../utils/password";
 
 import type { LoginInput, RegisterInput } from "../validators/authSchemas";
+import type { User, UserProfile } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
+
+type UserWithProfile = User & { profile: UserProfile | null };
+
+function toPublicUser(user: UserWithProfile) {
+  return {
+    id: user.id,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    isVerified: user.isVerified,
+    isActive: user.isActive,
+    createdAt: user.createdAt,
+    profile: user.profile
+      ? {
+          firstName: user.profile.firstName,
+          lastName: user.profile.lastName,
+          avatarUrl: user.profile.avatarUrl,
+        }
+      : null,
+  };
+}
+
+async function findActiveUserByEmail(email: string): Promise<UserWithProfile | null> {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { profile: true },
+  });
+
+  if (!user || user.deletedAt) {
+    return null;
+  }
+
+  return user;
+}
 
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const data = await authService.register(req.body as RegisterInput);
-    res.status(201).json({ success: true, data });
+    const input = req.body as RegisterInput;
+
+    const existingEmail = await prisma.user.findUnique({ where: { email: input.email } });
+    if (existingEmail) {
+      throw new AppError(409, "CONFLICT", "Email already registered");
+    }
+
+    if (input.phone) {
+      const existingPhone = await prisma.user.findUnique({ where: { phone: input.phone } });
+      if (existingPhone) {
+        throw new AppError(409, "CONFLICT", "Phone already registered");
+      }
+    }
+
+    const passwordHash = await hashPassword(input.password);
+
+    const user = await prisma.user.create({
+      data: {
+        email: input.email,
+        phone: input.phone,
+        passwordHash,
+        role: input.role,
+        profile: {
+          create: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+          },
+        },
+      },
+      include: { profile: true },
+    });
+
+    const accessToken = signAccessToken({ sub: user.id, email: user.email, role: user.role });
+
+    res.status(201).json({ success: true, data: { user: toPublicUser(user), accessToken } });
   } catch (error) {
     next(error);
   }
@@ -14,8 +85,30 @@ export async function register(req: Request, res: Response, next: NextFunction):
 
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const data = await authService.login(req.body as LoginInput);
-    res.status(200).json({ success: true, data });
+    const input = req.body as LoginInput;
+
+    const user = await findActiveUserByEmail(input.email);
+
+    if (!user?.passwordHash) {
+      throw new AppError(401, "UNAUTHORIZED", "Invalid email or password");
+    }
+
+    if (!user.isActive) {
+      throw new AppError(
+        403,
+        "ACCOUNT_SUSPENDED",
+        "Your account has been suspended. Please contact support."
+      );
+    }
+
+    const passwordMatches = await comparePassword(input.password, user.passwordHash);
+    if (!passwordMatches) {
+      throw new AppError(401, "UNAUTHORIZED", "Invalid email or password");
+    }
+
+    const accessToken = signAccessToken({ sub: user.id, email: user.email, role: user.role });
+
+    res.status(200).json({ success: true, data: { user: toPublicUser(user), accessToken } });
   } catch (error) {
     next(error);
   }
