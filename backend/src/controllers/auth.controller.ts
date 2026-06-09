@@ -1,6 +1,6 @@
-import * as authService from "../services/authService.js";
+import * as authService from "../services/auth.service";
 
-import type { LoginInput, RegisterInput } from "../validators/authSchemas.js";
+import type { LoginInput, RegisterInput } from "../validators/authSchemas";
 import type { NextFunction, Request, Response } from "express";
 
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {

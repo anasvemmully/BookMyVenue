@@ -1,9 +1,9 @@
-import { prisma } from "../config/db.js";
-import { AppError } from "../utils/AppError.js";
-import { signAccessToken } from "../utils/jwt.js";
-import { comparePassword, hashPassword } from "../utils/password.js";
+import { prisma } from "../config/db";
+import { AppError } from "../utils/AppError";
+import { signAccessToken } from "../utils/jwt";
+import { comparePassword, hashPassword } from "../utils/password";
 
-import type { LoginInput, RegisterInput } from "../validators/authSchemas.js";
+import type { LoginInput, RegisterInput } from "../validators/authSchemas";
 import type { User, UserProfile } from "@prisma/client";
 
 type UserWithProfile = User & { profile: UserProfile | null };

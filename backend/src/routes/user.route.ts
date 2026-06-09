@@ -1,9 +1,9 @@
 import { Router } from "express";
 
-import * as userController from "../controllers/userController.js";
-import { authenticate } from "../middleware/authMiddleware.js";
-import { validateRequest } from "../middleware/validateRequest.js";
-import { updateProfileSchema } from "../validators/userSchemas.js";
+import * as userController from "../controllers/user.controller";
+import { authenticate } from "../middleware/authMiddleware";
+import { validateRequest } from "../middleware/validateRequest";
+import { updateProfileSchema } from "../validators/userSchemas";
 
 import type { Handler } from "express";
 

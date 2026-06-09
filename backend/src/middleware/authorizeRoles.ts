@@ -1,4 +1,4 @@
-import { AppError } from "../utils/AppError.js";
+import { AppError } from "../utils/AppError";
 
 import type { UserRole } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";

@@ -1,4 +1,4 @@
-import * as userService from "../services/userService";
+import * as userService from "../services/user.service";
 
 import type { UpdateProfileInput } from "../validators/userSchemas";
 import type { NextFunction, Request, Response } from "express";
