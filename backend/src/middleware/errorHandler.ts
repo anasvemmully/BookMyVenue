@@ -1,21 +1,56 @@
-import type { Request, Response, NextFunction } from "express";
+import { Prisma } from "@prisma/client";
+import jwt from "jsonwebtoken";
 
-export interface AppError extends Error {
-  statusCode?: number;
-}
+import { AppError } from "../utils/AppError.js";
+
+import type { NextFunction, Request, Response } from "express";
 
 export function errorHandler(
-  err: AppError,
+  err: unknown,
   _req: Request,
   res: Response,
   _next: NextFunction
 ): void {
-  console.error("Error Details:", err);
+  if (err instanceof AppError) {
+    res.status(err.statusCode).json({
+      success: false,
+      error: {
+        code: err.code,
+        message: err.message,
+        details: err.details,
+      },
+    });
+    return;
+  }
 
-  const statusCode = err.statusCode || 500;
-  const message = statusCode === 500 ? "Internal server error" : err.message;
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    res.status(409).json({
+      success: false,
+      error: {
+        code: "CONFLICT",
+        message: "Resource already exists",
+      },
+    });
+    return;
+  }
 
-  res.status(statusCode).json({
-    error: message,
+  if (err instanceof jwt.JsonWebTokenError || err instanceof jwt.TokenExpiredError) {
+    res.status(401).json({
+      success: false,
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Invalid or expired token",
+      },
+    });
+    return;
+  }
+
+  console.error(err);
+  res.status(500).json({
+    success: false,
+    error: {
+      code: "INTERNAL_ERROR",
+      message: "Internal server error",
+    },
   });
 }

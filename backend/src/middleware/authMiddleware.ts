@@ -1,27 +1,54 @@
-import jwt from "jsonwebtoken";
+import { prisma } from "../config/db.js";
+import { AppError } from "../utils/AppError.js";
+import { verifyAccessToken } from "../utils/jwt.js";
 
-import type { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
 
-const secret = process.env.JWT_SECRET || "default-secret-change-me";
-
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : authHeader;
-
-  if (!token) {
-    return res.status(401).json({ success: false, error: "No token provided" });
-  }
-
+export async function authenticate(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
-    const decoded = jwt.verify(token, secret) as {
-      userId: string;
-      email: string;
-      role: string;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    }
+
+    const token = authHeader.slice(7);
+
+    let payload;
+    try {
+      payload = verifyAccessToken(token);
+    } catch {
+      throw new AppError(401, "UNAUTHORIZED", "Invalid or expired token");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user || user.deletedAt) {
+      throw new AppError(401, "UNAUTHORIZED", "Authentication required");
+    }
+
+    if (!user.isActive) {
+      throw new AppError(
+        403,
+        "ACCOUNT_SUSPENDED",
+        "Your account has been suspended. Please contact support."
+      );
+    }
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
     };
 
-    req.user = decoded;
     next();
-  } catch (_error) {
-    return res.status(401).json({ success: false, error: "Invalid token" });
+  } catch (error) {
+    next(error);
   }
 }

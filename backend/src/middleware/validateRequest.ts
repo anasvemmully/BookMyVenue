@@ -1,23 +1,18 @@
-import { ZodError } from "zod";
+import { AppError } from "../utils/AppError.js";
 
-import type { Request, Response, NextFunction } from "express";
-import type { ZodSchema } from "zod";
+import type { NextFunction, Request, Response } from "express";
+import type { ZodType } from "zod";
 
-export function validateRequest(schema: ZodSchema) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    try {
-      schema.parse(req.body);
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const errors = error.errors.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        }));
-        res.status(400).json({ errors });
-        return;
-      }
-      next(error);
+export function validateRequest(schema: ZodType) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    const result = schema.safeParse(req.body);
+
+    if (!result.success) {
+      next(new AppError(400, "VALIDATION_ERROR", "Validation failed", result.error.flatten()));
+      return;
     }
+
+    req.body = result.data;
+    next();
   };
 }
