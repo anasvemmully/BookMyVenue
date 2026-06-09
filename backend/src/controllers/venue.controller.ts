@@ -1,4 +1,4 @@
-import { venueService, type VenueFilters } from "../services/venueService.js";
+import { venueService, type VenueFilters } from "../services/venue.service";
 
 import type { Request, Response, NextFunction } from "express";
 
@@ -25,7 +25,7 @@ export const getById = async (req: Request, res: Response, next: NextFunction) =
 
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await venueService.submitVenue(req.user!.userId, req.body);
+    const result = await venueService.submitVenue(req.user!.id, req.body);
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -34,11 +34,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
 
 export const edit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await venueService.editVenue(
-      req.params.id as string,
-      req.user!.userId,
-      req.body
-    );
+    const result = await venueService.editVenue(req.params.id as string, req.user!.id, req.body);
     res.json(result);
   } catch (error) {
     next(error);
@@ -57,7 +53,7 @@ export const approve = async (req: Request, res: Response, next: NextFunction) =
 
 export const addAvailabilitySlot = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await venueService.addAvailability(req.params.id as string, req.user!.userId, {
+    const result = await venueService.addAvailability(req.params.id as string, req.user!.id, {
       availableDate: new Date(req.body.availableDate),
       startTime: new Date(req.body.startTime),
       endTime: new Date(req.body.endTime),
@@ -75,7 +71,7 @@ export const setTicketTiers = async (req: Request, res: Response, next: NextFunc
   try {
     const result = await venueService.configureTicketTiers(
       req.params.id as string,
-      req.user!.userId,
+      req.user!.id,
       req.body.tiers
     );
     res.json(result);

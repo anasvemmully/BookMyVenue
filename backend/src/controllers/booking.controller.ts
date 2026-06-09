@@ -1,10 +1,10 @@
-import { bookingService } from "../services/bookingService.js";
+import { bookingService } from "../services/booking.service";
 
 import type { Request, Response, NextFunction } from "express";
 
 export const getUserBookings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const bookings = await bookingService.getUserBookings(req.user!.userId);
+    const bookings = await bookingService.getUserBookings(req.user!.id);
     res.json(bookings);
   } catch (error) {
     next(error);
@@ -13,7 +13,7 @@ export const getUserBookings = async (req: Request, res: Response, next: NextFun
 
 export const getOwnerBookings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const bookings = await bookingService.getOwnerBookings(req.user!.userId);
+    const bookings = await bookingService.getOwnerBookings(req.user!.id);
     res.json(bookings);
   } catch (error) {
     next(error);
@@ -23,7 +23,7 @@ export const getOwnerBookings = async (req: Request, res: Response, next: NextFu
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const booking = await bookingService.createBooking({
-      userId: req.user!.userId,
+      userId: req.user!.id,
       venueId: req.body.venueId,
       availabilityId: req.body.availabilityId,
       ticketTierId: req.body.ticketTierId,
@@ -44,7 +44,7 @@ export const updateStatus = async (req: Request, res: Response, next: NextFuncti
     }
     const booking = await bookingService.updateBookingStatus(
       req.params.id as string,
-      req.user!.userId,
+      req.user!.id,
       status
     );
     res.json(booking);
@@ -71,7 +71,7 @@ export const pay = async (req: Request, res: Response, next: NextFunction) => {
 
 export const getAnalytics = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const analytics = await bookingService.getOwnerAnalytics(req.user!.userId);
+    const analytics = await bookingService.getOwnerAnalytics(req.user!.id);
     res.json(analytics);
   } catch (error) {
     next(error);

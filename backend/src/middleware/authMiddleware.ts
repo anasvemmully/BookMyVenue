@@ -1,6 +1,6 @@
-import { prisma } from "../config/db.js";
-import { AppError } from "../utils/AppError.js";
-import { verifyAccessToken } from "../utils/jwt.js";
+import { prisma } from "../config/db";
+import { AppError } from "../utils/AppError";
+import { verifyAccessToken } from "../utils/jwt";
 
 import type { NextFunction, Request, Response } from "express";
 

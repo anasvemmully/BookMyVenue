@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 
-import { bookingController } from "../controllers/booking.controller.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+import { bookingController } from "../controllers/booking.controller";
+import { authenticate } from "../middleware/authMiddleware";
+import { validateRequest } from "../middleware/validateRequest";
 
 const createBookingSchema = z.object({
   venueId: z.string().uuid(),
@@ -27,7 +27,7 @@ const statusSchema = z.object({
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use(authenticate);
 
 // Customer bookings
 router.get("/user", bookingController.getUserBookings);

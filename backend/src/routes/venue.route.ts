@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
 
-import { venueController } from "../controllers/venue.controller.js";
-import { authMiddleware } from "../middleware/authMiddleware.js";
-import { validateRequest } from "../middleware/validateRequest.js";
+import { venueController } from "../controllers/venue.controller";
+import { authenticate } from "../middleware/authMiddleware";
+import { validateRequest } from "../middleware/validateRequest";
 
 const submitVenueSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -53,18 +53,18 @@ const router = Router();
 router.get("/", venueController.getAll);
 router.get("/:id", venueController.getById);
 
-router.post("/", authMiddleware, validateRequest(submitVenueSchema), venueController.create);
-router.put("/:id", authMiddleware, validateRequest(submitVenueSchema), venueController.edit);
-router.patch("/:id/approve", authMiddleware, venueController.approve);
+router.post("/", authenticate, validateRequest(submitVenueSchema), venueController.create);
+router.put("/:id", authenticate, validateRequest(submitVenueSchema), venueController.edit);
+router.patch("/:id/approve", authenticate, venueController.approve);
 router.post(
   "/:id/availability",
-  authMiddleware,
+  authenticate,
   validateRequest(availabilitySchema),
   venueController.addAvailabilitySlot
 );
 router.post(
   "/availability/:id/tiers",
-  authMiddleware,
+  authenticate,
   validateRequest(tiersSchema),
   venueController.setTicketTiers
 );
